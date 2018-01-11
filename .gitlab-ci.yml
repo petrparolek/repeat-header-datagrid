@@ -1,0 +1,97 @@
+# Select image from https://hub.docker.com/_/php/
+image: sunfoxcz/docker-php-build:7.1
+
+# Select what we should cache
+cache:
+  paths:
+  - vendor/
+
+before_script:
+# Install git, the php image doesn't have installed
+- apt-get update -yqq
+- apt-get install git curl rsync ssh unzip gzip wget -yqq
+
+- bash ci/docker_install.sh
+- php composer.phar install
+
+services:
+- mysql
+
+variables:
+  GIT_DEPTH: "1"
+  
+stages:
+    - deploy
+
+deploy to production:
+    stage: deploy
+    environment: production
+    image: sunfoxcz/docker-php-build:7.1
+    script:
+        - echo "Creating production config neon"
+        
+        - bash ci/create_production_neon.sh "${MYSQL_PRODUCTION_HOST}" "${MYSQL_PRODUCTION_USER}" "${MYSQL_PRODUCTION_PASSWORD}" "${MYSQL_PRODUCTION_DATABASE}"
+        
+        - echo "Deploy SSH key"
+        
+        - echo "${SSH_PRIVATE_KEY}" > id_rsa
+        - chmod 700 id_rsa
+        - mkdir "${HOME}/.ssh"
+        - echo "${SSH_HOST_KEY}" > "${HOME}/.ssh/known_hosts"
+        # install ssh-agent
+        - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+        # run ssh-agent
+        - eval $(ssh-agent -s)
+        # add ssh key stored in SSH_PRIVATE_KEY variable to the agent store
+        - ssh-add <(echo "$SSH_PRIVATE_KEY")
+        # disable host key checking (NOTE: makes you susceptible to man-in-the-middle attacks)
+        # WARNING: use only in docker container, if you use it with shell you will overwrite your user's ssh config
+        - mkdir -p ~/.ssh
+        - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+        - echo ${WWW_ROOT} > WWW_ROOT
+        - echo ${BACKUPS_ROOT} > BACKUPS_ROOT
+        
+        - ssh www-data@webnazakazku.cz "mkdir -p ${BACKUPS_ROOT}"
+        - ssh www-data@webnazakazku.cz "mkdir -p ${BACKUPS_ROOT}/temp"
+        - ssh www-data@webnazakazku.cz "cat ${WWW_ROOT}/VERSION > ${BACKUPS_ROOT}/temp/OLD_VERSION"
+        - echo `git rev-parse --short HEAD` '('`git show -s --format=%ci`')' > VERSION
+        
+        - echo "Turning on maintenance mode"
+        - rsync -avz -e 'ssh -i id_rsa' ./maintenance_mode.sh www-data@webnazakazku.cz:${WWW_ROOT}
+        - ssh www-data@webnazakazku.cz "bash ${WWW_ROOT}/maintenance_mode.sh on"
+        
+        - echo "Backup previous files in production"
+        
+        - echo ${MYSQL_PRODUCTION_HOST} > MYSQL_PRODUCTION_HOST
+        - echo ${MYSQL_PRODUCTION_USER} > MYSQL_PRODUCTION_USER
+        - echo ${MYSQL_PRODUCTION_PASSWORD} > MYSQL_PRODUCTION_PASSWORD
+        - echo ${MYSQL_PRODUCTION_DATABASE} > MYSQL_PRODUCTION_DATABASE
+        - ssh www-data@webnazakazku.cz "cp -R ${WWW_ROOT} ${BACKUPS_ROOT}/temp"
+        - ssh www-data@webnazakazku.cz "cd ${BACKUPS_ROOT} && tar -zcf old_`date +%Y-%m-%d-%H-%M`.tar.gz ${BACKUPS_ROOT}/temp"
+        - ssh www-data@webnazakazku.cz "rm -rf ${BACKUPS_ROOT}/temp"
+        
+        - echo "Deploying files to production"
+        
+        - rsync -hrvz --delete --exclude=www/uploaded/ --exclude=temp/sessions/ -e 'ssh -i id_rsa' ./ www-data@webnazakazku.cz:${WWW_ROOT}
+        - ssh www-data@webnazakazku.cz "bash ${WWW_ROOT}/ci/backup-db.sh ${MYSQL_PRODUCTION_HOST} ${MYSQL_PRODUCTION_USER} ${MYSQL_PRODUCTION_PASSWORD} ${MYSQL_PRODUCTION_DATABASE} > ${BACKUPS_ROOT}/old_`date +%Y-%m-%d-%H-%M`.sql"
+        - ssh www-data@webnazakazku.cz "mkdir -p ${WWW_ROOT}/app/migrations/basic-data ${WWW_ROOT}/app/migrations/dummy-data ${WWW_ROOT}/app/migrations/structures"
+        
+        - echo "Purging cache and temp files"
+        
+        - ssh www-data@webnazakazku.cz "rm -rf ${WWW_ROOT}/temp/cache ${WWW_ROOT}/ci ${WWW_ROOT}/nbproject ${WWW_ROOT}/.git" 2> /dev/null
+        - ssh www-data@webnazakazku.cz "rm -f ${WWW_ROOT}/.gitlab-ci.yml ${WWW_ROOT}/id_rsa ${WWW_ROOT}/MYSQL_PRODUCTION_HOST ${WWW_ROOT}/MYSQL_PRODUCTION_USER ${WWW_ROOT}/MYSQL_PRODUCTION_PASSWORD ${WWW_ROOT}/MYSQL_PRODUCTION_DATABASE ${WWW_ROOT}/WWW_ROOT ${WWW_ROOT}/BACKUPS_ROOT" 2> /dev/null
+        
+        - echo "Running SQL migrations"
+        
+        - ssh www-data@webnazakazku.cz "php ${WWW_ROOT}/bin/console migrations:continue --production"
+        
+        - echo "Turning off maintenance mode"
+        - ssh www-data@webnazakazku.cz "bash ${WWW_ROOT}/maintenance_mode.sh off"
+        
+        - echo "Deploy is finished"
+    only:
+        - master
+
+cache:
+    paths:
+        - vendor
