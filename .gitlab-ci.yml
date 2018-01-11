@@ -55,7 +55,7 @@ deploy to production:
         - echo "Deploying files to production"
         
         - rsync -hrvz --delete --exclude=www/uploaded/ --exclude=temp/sessions/ -e 'ssh -i id_rsa' ./ www-data@webnazakazku.cz:${WWW_ROOT}
-        - ssh www-data@webnazakazku.cz "mkdir -p ${WWW_ROOT}/app/migrations/basic-data ${WWW_ROOT}/app/migrations/dummy-data ${WWW_ROOT}/app/migrations/structures"
+        - ssh www-data@webnazakazku.cz "mkdir -p ${WWW_ROOT}/migrations/basic-data ${WWW_ROOT}/migrations/dummy-data ${WWW_ROOT}/app/migrations/structures"
         
         - echo "Purging cache and temp files"
         
