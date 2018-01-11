@@ -66,9 +66,6 @@ deploy to production:
         
         - ssh www-data@webnazakazku.cz "php ${WWW_ROOT}/bin/console migrations:continue --production"
         
-        - echo "Turning off maintenance mode"
-        - ssh www-data@webnazakazku.cz "bash ${WWW_ROOT}/maintenance_mode.sh off"
-        
         - echo "Deploy is finished"
     only:
         - master
