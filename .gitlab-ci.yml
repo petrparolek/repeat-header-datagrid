@@ -14,9 +14,6 @@ before_script:
 - bash ci/docker_install.sh
 - php composer.phar install
 
-services:
-- mysql
-
 variables:
   GIT_DEPTH: "1"
   
@@ -49,26 +46,11 @@ deploy to production:
         - mkdir -p ~/.ssh
         - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
         - echo ${WWW_ROOT} > WWW_ROOT
-        - echo ${BACKUPS_ROOT} > BACKUPS_ROOT
-        
-        - ssh www-data@webnazakazku.cz "mkdir -p ${BACKUPS_ROOT}"
-        - ssh www-data@webnazakazku.cz "mkdir -p ${BACKUPS_ROOT}/temp"
-        - ssh www-data@webnazakazku.cz "cat ${WWW_ROOT}/VERSION > ${BACKUPS_ROOT}/temp/OLD_VERSION"
-        - echo `git rev-parse --short HEAD` '('`git show -s --format=%ci`')' > VERSION
-        
-        - echo "Turning on maintenance mode"
-        - rsync -avz -e 'ssh -i id_rsa' ./maintenance_mode.sh www-data@webnazakazku.cz:${WWW_ROOT}
-        - ssh www-data@webnazakazku.cz "bash ${WWW_ROOT}/maintenance_mode.sh on"
-        
-        - echo "Backup previous files in production"
         
         - echo ${MYSQL_PRODUCTION_HOST} > MYSQL_PRODUCTION_HOST
         - echo ${MYSQL_PRODUCTION_USER} > MYSQL_PRODUCTION_USER
         - echo ${MYSQL_PRODUCTION_PASSWORD} > MYSQL_PRODUCTION_PASSWORD
         - echo ${MYSQL_PRODUCTION_DATABASE} > MYSQL_PRODUCTION_DATABASE
-        - ssh www-data@webnazakazku.cz "cp -R ${WWW_ROOT} ${BACKUPS_ROOT}/temp"
-        - ssh www-data@webnazakazku.cz "cd ${BACKUPS_ROOT} && tar -zcf old_`date +%Y-%m-%d-%H-%M`.tar.gz ${BACKUPS_ROOT}/temp"
-        - ssh www-data@webnazakazku.cz "rm -rf ${BACKUPS_ROOT}/temp"
         
         - echo "Deploying files to production"
         
