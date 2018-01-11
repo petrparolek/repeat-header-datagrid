@@ -7,12 +7,6 @@ dir=$(cd `dirname $0` && pwd)
 create_production_neon() {
     cat > "$dir/../app/config/config.local.neon" <<EOF
 parameters:
-    host: $1
-    user: $2
-    password: '$3'
-    dbname: $4
-
-parameters:
 
 database:
 		dsn: 'mysql:host=$1;dbname=$4'
