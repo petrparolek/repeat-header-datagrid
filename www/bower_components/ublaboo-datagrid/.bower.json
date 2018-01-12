@@ -31,15 +31,14 @@
     "jquery-ui-sortable": "https://github.com/ryantbrown/jquery-ui-sortable.git",
     "bootstrap": ">= 3.3.0"
   },
-  "version": "5.5.0",
-  "_release": "5.5.0",
+  "version": "5.5.2",
+  "_release": "5.5.2",
   "_resolution": {
     "type": "version",
-    "tag": "v5.5.0",
-    "commit": "f884084f54440569dc2dd246f62cb15c5773283a"
+    "tag": "v5.5.2",
+    "commit": "cc5fc26ac94ec531c0a7e9b233a3760b4bffa20a"
   },
   "_source": "https://github.com/ublaboo/datagrid.git",
   "_target": "^5.5.0",
-  "_originalSource": "ublaboo-datagrid",
-  "_direct": true
+  "_originalSource": "ublaboo-datagrid"
 }

@@ -2052,16 +2052,16 @@
         },
         {
             "name": "ublaboo/datagrid",
-            "version": "v5.5.0",
+            "version": "v5.5.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ublaboo/datagrid.git",
-                "reference": "f884084f54440569dc2dd246f62cb15c5773283a"
+                "reference": "cc5fc26ac94ec531c0a7e9b233a3760b4bffa20a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ublaboo/datagrid/zipball/f884084f54440569dc2dd246f62cb15c5773283a",
-                "reference": "f884084f54440569dc2dd246f62cb15c5773283a",
+                "url": "https://api.github.com/repos/ublaboo/datagrid/zipball/cc5fc26ac94ec531c0a7e9b233a3760b4bffa20a",
+                "reference": "cc5fc26ac94ec531c0a7e9b233a3760b4bffa20a",
                 "shasum": ""
             },
             "require": {
@@ -2105,7 +2105,7 @@
                 "grid",
                 "nette"
             ],
-            "time": "2018-01-11T20:26:57+00:00"
+            "time": "2018-01-12T08:48:30+00:00"
         },
         {
             "name": "ublaboo/datagrid-nette-database-data-source",
