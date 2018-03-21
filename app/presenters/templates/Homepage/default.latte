@@ -1,3 +1,11 @@
 {block content}
 
 {control invoicesGrid}
+
+{define js}
+<script type="text/javascript">
+	$('#frm-invoicesGrid-filter-per_page').change(function() {
+		window.setTimeout('location.reload()', 300);
+	}); 
+</script>
+{/define}
